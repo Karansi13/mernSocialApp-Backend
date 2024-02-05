@@ -1,30 +1,35 @@
 const Post = require("../models/Post");
 const User = require("../models/User")
+const cloudinary = require("cloudinary")
 
 exports.createPost = async(req, res) => {
 
     try{
-        const newPostData = {
+
+        const myCloud = await cloudinary.v2.uploader.upload(req.body.image, {
+            folder: "posts",
+          });
+          const newPostData = {
             caption: req.body.caption,
-            image:{
-                public_id: "req.body.public_id",
-                url: "req.body.url",
+            image: {
+              public_id: myCloud.public_id,
+              url: myCloud.secure_url,
             },
-            owner: req.user._id
-
-        }
-
-        const post = await Post.create(newPostData);
-
-        const user = await User.findById(req.user._id);
-
-        user.posts.push(post._id);
+            owner: req.user._id,
+          };
+      
+          const post = await Post.create(newPostData);
+      
+          const user = await User.findById(req.user._id);
+      
+          user.posts.unshift(post._id);
+        // unshift => starting me add hota h
 
         await user.save();
 
         res.status(201).json({
             success: true,
-            post
+            message: "Post created"
         });
 
     } catch (error){
@@ -54,6 +59,8 @@ exports.deletePost = async (req, res) => {
                 message: "unauthorized"
             })
         }
+
+        await cloudinary.v2.uploader.destroy(post.image.public_id);
 
         await post.deleteOne();
 
@@ -127,28 +134,26 @@ exports.likeAndUnlikePost = async (req,res) => {
 
 
 exports.getPostOfFollowing = async (req, res) => {
-    try{
-
-        const user = await User.findById(req.user._id);
-
-        const posts = await Post.find({
-            owner: {
-                $in: user.following,
-            }
-        })
-
-        res.status(200).json({
-            success: true,
-            posts
-        });
-
-    } catch(error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+    try {
+      const user = await User.findById(req.user._id);
+  
+      const posts = await Post.find({
+        owner: {
+          $in: user.following,
+        },
+      }).populate("owner likes comments.user");
+  
+      res.status(200).json({
+        success: true,
+        posts: posts.reverse(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
     }
-}
+  };
 
 exports.updateCaption = async (req, res) => {
     try {

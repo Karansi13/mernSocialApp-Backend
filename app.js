@@ -1,14 +1,23 @@
 const express = require("express")
 const app = express();
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
+
 
 if(process.env.NODE_ENV !== 'production'){   
     require("dotenv").config({ path: "backend/config/config.env"})
 }
 
 // Using Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // we can use body-parser instead
+app.use(cors(
+    {
+        origin: [],
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true
+    }
+));
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // we can use body-parser instead
 app.use(cookieParser())
 
 // Importing Routes

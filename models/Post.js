@@ -6,7 +6,7 @@ const postSchema = new mongoose.Schema({
 
     image:{
         public_id: String,
-        utl: String,
+        url: String,
     },
 
     owner:{
